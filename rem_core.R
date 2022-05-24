@@ -100,7 +100,7 @@ EM_robust = function(sampleMat, c, lambda = 1, d, sigma_str, inits) {
                     sigma[[j]] =  matrix(num/denom, d, d)
                 }
                 # Eliminate uninformative cluster
-                if (sum(T_mat[j,]!=0) <= 3) {
+                if (sum(T_mat[j,]!=0) <= 5) {
                     mu[j,] = matrix(0, 1, d)
                     sigma[[j]] = diag(d) * 1e-2
                 }
