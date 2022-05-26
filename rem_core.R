@@ -18,7 +18,7 @@ library(dplyr)
 #                             are unstr, diag, or const
 #         inits       =       Initial condition for EM. It contains cluster proportions,
 #                             cluster average, and covariance matrixes for clusters.
-EM_robust = function(sampleMat, c, lambda = 1, d, sigma_str, inits) {
+EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
     n=nrow(sampleMat) # n is the number of observations
     ## Observations
     x = sampleMat
@@ -29,7 +29,7 @@ EM_robust = function(sampleMat, c, lambda = 1, d, sigma_str, inits) {
     ## Posterior likelihood
     T_mat = matrix(0,c,n)
     max_it = 15
-    if (lambda == 1) {
+    if (lambda == Inf) {
         ll <- c(1)
     } else {
         ll <-unique(c(Inf, lambda^(5:1))) 
@@ -41,7 +41,7 @@ EM_robust = function(sampleMat, c, lambda = 1, d, sigma_str, inits) {
             # E STEP: Construct the vector of the denom for T_mat for each i
             for (j in 1:c) {
                 if (det(sigma[[j]]) < 1e-7) {
-                    sigma[[j]] = diag(d)
+                    sigma[[j]] = diag(d)*1e-1
                 }
                 T_mat[j,] = log(tau[j]) + logdmvnorm(x,mu[j,],sigma = sigma[[j]])
             }
@@ -63,7 +63,7 @@ EM_robust = function(sampleMat, c, lambda = 1, d, sigma_str, inits) {
                 sigma_inv = solve(as.matrix(sigma[[j]]))
                 x1_sigma_inv = x1 %*% sigma_inv
                 MHdist = matrix(rowSums(x1_sigma_inv * x1), n, 1)
-                if (l == 1 ) {
+                if (l == 1) {
                     e = matrix(0, n, d)
                 } else {
                     for (i in 1:n) {
@@ -76,9 +76,13 @@ EM_robust = function(sampleMat, c, lambda = 1, d, sigma_str, inits) {
                 # Update mu
                 mu[j,] = colSums(T_mat[j,]%*%(x-e))/colSums(as.matrix(T_mat[j,]))
                 # Update sigma
-                num = matrix(0,d,d); denom = 0
+                num = matrix(0,d,d)
+                denom = 0
+                indices = which(e[,1]==0)
+                if (length(indices) == 0) {
+                    stop('lambda is too small, choose a bigger lambda to avoid no inliers case!')
+                }
                 if (sigma_str == "unstr") {
-                    indices = which(e[,1]==0)
                     denom = sum(T_mat[j,indices])
                     if (l == 1) {
                         x_prime = x[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T)
@@ -89,27 +93,34 @@ EM_robust = function(sampleMat, c, lambda = 1, d, sigma_str, inits) {
                     sigma[[j]] = matrix(num/denom, d, d)
                 }
                 else if (sigma_str == "const") {
-                    num = rowSums(sapply(1:n, function(i) {T_mat[j,i]*(1/d)*c(t(matrix(x[i,]-e[i,]-mu[j,]))%*%diag(d)%*%matrix(x[i,]-e[i,]-mu[j,])) * diag(d)}))
-                    denom = sum(T_mat[j,])
+                    denom = sum(T_mat[j,indices])
+                    if (l == 1) {
+                        x_prime = x[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T)
+                    } else {
+                        x_prime = x[indices,]-e[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T) 
+                    }
+                    num = sum(T_mat[j,indices]*x_prime^2)/d * diag(d)
+                    denom = sum(T_mat[j,indices])
                     sigma[[j]] =  matrix(num/denom, d, d)
                 }
                 # Diagonal structure
                 else {
-                    num = rowSums(sapply(1:n, function(i) {T_mat[j,i]*(matrix(x[i,]-e[i,]-mu[j,])%*%t(matrix(x[i,]-e[i,]-mu[j,])))*diag(d)}))
-                    denom = sum(T_mat[j,])
-                    sigma[[j]] =  matrix(num/denom, d, d)
+                    denom = sum(T_mat[j,indices])
+                    if (l == 1) {
+                        x_prime = x-matrix(mu[j,], ncol=d, nrow=n, byrow=T)
+                    } else {
+                        x_prime = x[indices,]-e[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T) 
+                    }
+                    num = t(x_prime)%*%diag(T_mat[j,indices], nrow=length(indices))%*%x_prime
+                    sigma[[j]] = diag(matrix(num/denom, d, d)) * diag(d)
                 }
                 # Eliminate uninformative cluster
-                if (sum(T_mat[j,]!=0) <= 5) {
+                if (sum(T_mat[j,]!=0) <= 3) {
                     mu[j,] = matrix(0, 1, d)
                     sigma[[j]] = diag(d) * 1e-2
                 }
-                if (sum(T_mat[j,])< 0.1*(1/c)) {
-                    mu[j,] = runif(d, min(sampleMat), max(sampleMat))
-                    sigma[[j]] = diag(d) * 1e-2
-                }
             }
-            if (is.na(max(abs(old_T_mat - T_mat)))) {stop('The lambda value is too small')}
+            if (any(is.na(max(abs(old_T_mat - T_mat))))) {stop('The lambda value is too small')}
             if (max(abs(old_T_mat - T_mat)) < 1e-6) break
         }
     }

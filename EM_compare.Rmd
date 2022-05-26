@@ -28,7 +28,7 @@ source('C:/Users/njzmh/OneDrive/Desktop/REM_official/simulator.R')
 ```{r}
 ## Set hyperparam
 cluster = 2
-lam = 2.3
+lam = 2.2
 
 ```
 
@@ -39,7 +39,7 @@ lam = 2.3
 sim_info <- simMultGauss_unif(n = 100, 
                          d = 2,
                          cluster = cluster,
-                         out_perc = 0.15,
+                         out_perc = 0.10,
                          out_mag = 2)
 ggplot() + geom_point(aes(x = sim_info$simdata[,1], y = sim_info$simdata[,2]))
 ```

@@ -9,15 +9,15 @@ library(fossil)
 library(dplyr)
 library(mclust)
 
-num = 2361
+num = 261
 set.seed(num)
 
 ## parameters
-d = 4
-n = 120
+d = 3
+n = 100
 c = 3
 rand_outliers = NULL
-num_sim = 50
+num_sim = 40
 lam = 2.5
 
 for (i in 1:5) { # for 1:5 we range from 5% to 25%
@@ -80,10 +80,11 @@ rand_outliers = rand_outliers %>% mutate(Perc_outliers = as.numeric(as.character
                                          Seed_number = as.numeric(as.character(Seed_number)),
                                          Rand_index = as.numeric(as.character(Rand_index)))
 
+## fix
 rand_outliers_mean = rand_outliers %>% group_by(Perc_outliers, Type_EM) %>%
     summarise(mean=mean(Rand_index),
-              lower = mean - 1.96*sd(Rand_index)/num_sim,
-              upper = min(mean + 1.96*sd(Rand_index)/num_sim,1))
+              lower = mean - 1.96*sd(Rand_index)/sqrt(num_sim),
+              upper = min(mean + 1.96*sd(Rand_index)/sqrt(num_sim),1))
 
 
 ## Plot the accuracy over the percent outliers
