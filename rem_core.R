@@ -105,14 +105,11 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
                 }
                 # Diagonal structure
                 else {
-                    denom = sum(T_mat[j,indices])
-                    if (l == 1) {
-                        x_prime = x-matrix(mu[j,], ncol=d, nrow=n, byrow=T)
-                    } else {
-                        x_prime = x[indices,]-e[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T) 
+                    for (i in 1:n){
+                      num = num + T_mat[j,i]*(matrix(x[i,]-e[i,]-mu[j,])%*%t(matrix(x[i,]-e[i,]-mu[j,])))*diag(d)
+                      denom = denom + T_mat[j,i]
                     }
-                    num = t(x_prime)%*%diag(T_mat[j,indices], nrow=length(indices))%*%x_prime
-                    sigma[[j]] = diag(matrix(num/denom, d, d)) * diag(d)
+                    sigma[[j]] = (num/denom)
                 }
                 # Eliminate uninformative cluster
                 if (sum(T_mat[j,]!=0) <= 3) {

@@ -44,7 +44,8 @@ multivarGaussian_unif = function(n, d, out_perc, out_mag, independent = TRUE, co
 
 simMultGauss_unif = function(n, d, cluster, out_perc, out_mag, cov_scale = 1){
     samples_simMultGauss = replicate(cluster, multivarGaussian_unif(n = n, d = d,
-                                                                    out_perc = out_perc, out_mag = out_mag, cov_scale))
+                                                                    out_perc = out_perc, out_mag = out_mag, cov_scale = 1))
+    
     sample_inline = do.call(rbind, samples_simMultGauss[5,])
     loop = 0
     idx = c()
@@ -55,6 +56,22 @@ simMultGauss_unif = function(n, d, cluster, out_perc, out_mag, cov_scale = 1){
         loop = loop+1
     }
     sampleMu = do.call(rbind, samples_simMultGauss[1,])
+    while(dist(sampleMu)<6 | dist(sampleMu)>20 ) {
+        samples_simMultGauss = replicate(cluster, multivarGaussian_unif(n = n, d = d,
+                                                                        out_perc = out_perc, out_mag = out_mag, cov_scale = 1))
+        
+        sample_inline = do.call(rbind, samples_simMultGauss[5,])
+        loop = 0
+        idx = c()
+        for (i in c(1:cluster)){
+            print(i)
+            temp = loop*n+c(1:sample_inline[i,])
+            idx=c(idx,temp)
+            loop = loop+1
+        }
+        sampleMu = do.call(rbind, samples_simMultGauss[1,])
+    }
+    
     sampleSigma = lapply(samples_simMultGauss[2,], function(y) as.matrix(y))
     simSamp = do.call(rbind, samples_simMultGauss[3,])
     simOut = do.call(rbind, samples_simMultGauss[4,])

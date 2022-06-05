@@ -13,14 +13,14 @@ num = 261
 set.seed(num)
 
 ## parameters
-d = 3
-n = 100
+d = 2
+n = 200
 c = 3
 rand_outliers = NULL
-num_sim = 40
-lam = 2.5
+num_sim = 1000
+lam = 2.6
 
-for (i in 1:5) { # for 1:5 we range from 5% to 25%
+for (i in 0:5) { # for 1:5 we range from 5% to 25%
     # Let's do 50 different sets per k
     
     # Set the percent outliers
@@ -31,11 +31,10 @@ for (i in 1:5) { # for 1:5 we range from 5% to 25%
         # for each k, we want the repeated samples to be the same
         seed_num = num + j
         set.seed(seed_num)
-        print(seed_num)
         
         ################ Create the simulated data #################
         # Create the simulation data
-        samples = replicate(c, multivarGaussian_unif(n=n, d=d, out_perc=perc_out, out_mag=1)) # changed from 5 to 10
+        samples = replicate(c, multivarGaussian_unif(n=n, d=d, out_perc=perc_out, out_mag=2)) # changed from 5 to 10
         
         # Combine the c samples so that all samples are in one matrix
         sampleMat = samples[,1]$gauss
@@ -65,6 +64,7 @@ for (i in 1:5) { # for 1:5 we range from 5% to 25%
         acc_mcl = rand.index(true, result_mclust$classification)
         acc_std = rand.index(true, as.numeric(result_standard$hard_assign))
         acc_rem = rand.index(true, as.numeric(result_rem$hard_assign))
+        
         
         curr_mclust = c(perc_out*100, seed_num, "mclust", acc_mcl)
         curr_stand = c(perc_out*100, seed_num, "standard", acc_std)
