@@ -14,13 +14,13 @@ set.seed(num)
 
 ## parameters
 d = 2
-n = 200
+n = 100
 c = 3
 rand_outliers = NULL
-num_sim = 1000
-lam = 2.6
+num_sim = 50
+lam = 2.5
 
-for (i in 0:5) { # for 1:5 we range from 5% to 25%
+for (i in 0:5) { # for 0:5 we range from 5% to 25%
     # Let's do 50 different sets per k
     
     # Set the percent outliers
@@ -34,7 +34,7 @@ for (i in 0:5) { # for 1:5 we range from 5% to 25%
         
         ################ Create the simulated data #################
         # Create the simulation data
-        samples = replicate(c, multivarGaussian_unif(n=n, d=d, out_perc=perc_out, out_mag=2)) # changed from 5 to 10
+        samples = replicate(c, multivarGaussian_unif(n=n, d=d, out_perc=0.1, out_mag=out_mag))
         
         # Combine the c samples so that all samples are in one matrix
         sampleMat = samples[,1]$gauss
@@ -81,10 +81,11 @@ rand_outliers = rand_outliers %>% mutate(Perc_outliers = as.numeric(as.character
                                          Rand_index = as.numeric(as.character(Rand_index)))
 
 ## fix
-rand_outliers_mean = rand_outliers %>% group_by(Perc_outliers, Type_EM) %>%
+rand_outliers_mean = rand_outliers %>% group_by(out_mag, Type_EM) %>%
     summarise(mean=mean(Rand_index),
-              lower = mean - 1.96*sd(Rand_index)/sqrt(num_sim),
-              upper = min(mean + 1.96*sd(Rand_index)/sqrt(num_sim),1))
+              lower = mean - 1.96*sd(Rand_index)/num_sim/sqrt(n),
+              upper = min(mean + 1.96*sd(Rand_index)/num_sim/sqrt(n),1))
+
 
 
 ## Plot the accuracy over the percent outliers

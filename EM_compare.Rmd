@@ -29,9 +29,9 @@ source('C:/Users/njzmh/OneDrive/Desktop/REM_official/simulator.R')
 # Set Hyperparameters
 ```{r}
 ## Set hyperparam
-cluster = 2
-lam = 2.2
-n = 200
+cluster = 3
+lam = 3
+n = 50
 ```
 
 #
@@ -41,14 +41,17 @@ n = 200
 sim_info <- simMultGauss_unif(n = n, 
                               d = 2,
                               cluster = cluster,
-                              out_perc = 0.3,
-                              out_mag = 2)
+                              out_perc = 0.1,
+                              out_mag = 2.5)
 sampleMat = as.data.frame(cbind(sim_info$simdata, rep(1:cluster, each=n)))
 colnames(sampleMat) = c("X", "Y", "Cluster")
 sampleMat$Cluster = as.character(sampleMat$Cluster)
-true = as.numeric(sampleMat$Cluster)
-ggplot() + geom_point(aes(x = sim_info$simdata[,1], y = sim_info$simdata[,2]))
+true = sim_info$Label
+true_outl <- sim_info$LabelO
+ggplot() + geom_point(aes(x = sim_info$outliers[,1], y = sim_info$outliers[,2]), col = 'darkgrey') + 
+           geom_point(aes(x = sim_info$inliers[,1], y = sim_info$inliers[,2]), pch = 1, cex = 2)
 ```
+
 
 # Create the initial condition
 ```{r}
@@ -59,17 +62,19 @@ init_cond <- initial_hier(sim_info$simdata, cluster = cluster)
 # EM results
 ```{r}
 ## MCLUST
+NoiseInit_by_guess = sample(c(TRUE,FALSE), size = n*cluster, 
+          replace = TRUE, prob = c(1,5)/6)
 result_mclust = Mclust(sim_info[["simdata"]], verbose=F, G=cluster, modelNames = "VVV",
-                       initialization = list(hcPairs = hc(sim_info[["simdata"]])),
+                       initialization = list(hc(sampleMat), noise = NoiseInit_by_guess),
                        control = emControl(tol=c(1.e-6, 1.e-7), itmax=15))
 ## Standard EM
 result_std <- EM_robust(sampleMat =  sim_info$simdata, c = cluster, d=2, lambda = Inf, sigma_str = 'unstr', inits = init_cond)
 ## Robust EM
-result_robust <- EM_robust(sampleMat =  sim_info$simdata, c = cluster, d=2, lambda = lam, sigma_str = 'unstr', inits = init_cond)
+result_robust <- EM_robust(sampleMat =  sim_info$simdata, c = 3, d=2, lambda = lam, sigma_str = 'unstr', inits = init_cond)
 ## 1. check adjusted randindex
-(acc_mcl = rand.index(true, result_mclust$classification))
-(acc_std = rand.index(true, as.numeric(result_std$hard_assign)))
-(acc_rem = rand.index(true, as.numeric(result_robust$hard_assign)))
+(acc_mcl = rand.index(true_outl, result_mclust$classification))
+(acc_std = rand.index(true_outl, as.numeric(result_std$hard_assign_out)))
+(acc_rem = rand.index(true_outl, as.numeric(result_robust$hard_assign_out)))
 ```
 
 # Plot of clusters
@@ -79,7 +84,18 @@ p2 <- plot_rem(result_std, sim_info$simdata)
 p3 <- plot_rem(result_robust, sim_info$simdata)
 ggarrange(p1,p2, p3,
           labels = c('mclust' ,'standard', 'robust'),
-          ncol = 3, nrow = 1)
+          ncol = 1, nrow = 3)
+```
+
+
+
+
+```{r}
+p1_1 <- plot_mc(result_mclust)
+p3_1 <- plot_rem_outlier(result_robust, sim_info$simdata)
+ggarrange(p1_1, p3_1,
+          labels = c('mclust', 'robust'),
+          ncol = 1, nrow = 2)
 ```
 
 

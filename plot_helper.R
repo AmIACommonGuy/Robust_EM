@@ -78,7 +78,48 @@ plot_rem = function(sim_EMfit, sampleMat){
 }
 
 
-
+plot_rem_outlier = function(sim_EMfit, sampleMat){
+    
+    swap <- function(vec, from, to) {
+        tmp <- to[ match(vec, from) ]
+        tmp[is.na(tmp)] <- vec[is.na(tmp)]
+        return(tmp)
+    }
+    
+    # Assign values from returned list to mu, sigma, T_mat, tau, e
+    mu = as.data.frame(sim_EMfit$mu)
+    sigma = sim_EMfit$sigma
+    tau = sim_EMfit$tau
+    #error = sim_EMfit$e
+    c = sim_EMfit$c
+    d = sim_EMfit$d
+    n = sim_EMfit$inlier
+    lambda = sim_EMfit$lambda
+    
+    
+    # Assign the cluster number to whichever one has the highest probability
+    hard_assign = sim_EMfit$hard_assign_out
+    #hard_assign = swap(hard_assign, c(1,2), c(2,1))
+    
+    sampleMat2 = as.data.frame(sampleMat)
+    sampleMat2$Cluster = hard_assign
+    
+    plot.new()
+    ellipse0 = lapply(1:c, function(j) mixtools::ellipse(mu=sim_EMfit$mu[j,],
+                                                         sigma=sim_EMfit$sigma[[j]], npoints = 300, newplot=F))
+    
+    ellipse_list <- c()
+    covar_plot_f_EM <- function(j){
+        boundary <- data.frame(ellipse0[j])
+        colnames(boundary) <- c("Axis1", "Axis2")
+        return(geom_path(data = boundary, aes(x=Axis1, y=Axis2), size=0.5, color = 'red'))
+    }
+    covar_EM_plots <- lapply(1:nrow(mu), covar_plot_f_EM)
+    dev.off()
+    g <- ggplot(sampleMat2, aes(x=`V1`, y=`V2`, colour=Cluster)) + geom_point() +
+        geom_point(data = mu, aes(x=V1, y=V2), shape=2, size = 1, stroke = 2, color = 'black')
+    return(g)
+}
 
 
 

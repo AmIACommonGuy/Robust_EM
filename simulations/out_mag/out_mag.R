@@ -13,14 +13,14 @@ num = 232
 set.seed(num)
 
 ## parameters
-d = 3
-n = 120
+d = 2
+n = 100000
 c = 3
 rand_outliers = NULL
-num_sim = 30
-lam = 2.5
+num_sim = 50
+lam = 2.4
 
-for (i in 1:5) { # for 1:5 we range from 5% to 25%
+for (i in 1:6) {
     # Let's do 50 different sets per k
     
     # Set the percent outliers
@@ -81,8 +81,8 @@ rand_outliers = rand_outliers %>% mutate(out_mag = as.numeric(as.character(out_m
 
 rand_outliers_mean = rand_outliers %>% group_by(out_mag, Type_EM) %>%
     summarise(mean=mean(Rand_index),
-              lower = mean - 1.96*sd(Rand_index)/num_sim,
-              upper = min(mean + 1.96*sd(Rand_index)/num_sim,1))
+              lower = mean - 1.96*sd(Rand_index)/num_sim/sqrt(n),
+              upper = min(mean + 1.96*sd(Rand_index)/num_sim/sqrt(n),1))
 
 
 ## Plot the accuracy over the percent outliers

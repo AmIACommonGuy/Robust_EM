@@ -73,12 +73,14 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
                         else { e[i,] = (x[i,] - mu[j,]) }
                     }
                 }
-                # Update mu
-                mu[j,] = colSums(T_mat[j,]%*%(x-e))/colSums(as.matrix(T_mat[j,]))
+
                 # Update sigma
                 num = matrix(0,d,d)
                 denom = 0
                 indices = which(e[,1]==0)
+                # Update mu
+                mu[j,] = colSums(T_mat[j,]%*%(x-e))/colSums(as.matrix(T_mat[j,]))
+                # mu[j,] = colSums(T_mat[j,indices]%*%(x[indices,]-e[indices,]))/colSums(as.matrix(T_mat[j,indices]))
                 if (length(indices) == 0) {
                     stop('lambda is too small, choose a bigger lambda to avoid no inliers case!')
                 }
@@ -106,8 +108,8 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
                 # Diagonal structure
                 else {
                     for (i in 1:n){
-                      num = num + T_mat[j,i]*(matrix(x[i,]-e[i,]-mu[j,])%*%t(matrix(x[i,]-e[i,]-mu[j,])))*diag(d)
-                      denom = denom + T_mat[j,i]
+                        num = num + T_mat[j,i]*(matrix(x[i,]-e[i,]-mu[j,])%*%t(matrix(x[i,]-e[i,]-mu[j,])))*diag(d)
+                        denom = denom + T_mat[j,i]
                     }
                     sigma[[j]] = (num/denom)
                 }
@@ -118,15 +120,35 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
                 }
             }
             if (any(is.na(max(abs(old_T_mat - T_mat))))) {stop('The lambda value is too small')}
-            if (max(abs(old_T_mat - T_mat)) < 1e-6) break
+            if (max(abs(old_T_mat - T_mat)) < 1e-6) {
+                break
+            }
         }
     }
+    inlier_list <- c()
+    ## Predict outliers
+    for (j in 1:c) {
+        e = matrix(0, n, d)
+        # MHdist: Square of Mahalanobis distance
+        x1 = x - rep(mu[j, ], each = n)
+        sigma_inv = solve(as.matrix(sigma[[j]]))
+        x1_sigma_inv = x1 %*% sigma_inv
+        MHdist = matrix(rowSums(x1_sigma_inv * x1), n, 1)
+        for (i in 1:n) {
+            if (MHdist[i,] < lambda^2) {
+                inlier_list <- c(inlier_list, i) 
+            }
+        }
+    }
+    # print(length(inlier_list)/n)
     # Assign the column names to the specified cluster
     Soft_assign = t(T_mat)
     colnames(Soft_assign) = paste(1:c)
     hard_assign = matrix(paste(apply(Soft_assign, 1, which.max)), n, 1)
+    hard_assign_out <- hard_assign
+    hard_assign_out[-inlier_list,1] <- cluster+1
     # Construct return list
-    returnList = list(mu, sigma, T_mat, tau, c, d, n, lambda, hard_assign)
-    names(returnList) = c("mu", "sigma", "T_mat", "tau", "c", "d", "n", "lambda", "hard_assign")
+    returnList = list(mu, sigma, T_mat, tau, c, d, n, lambda, hard_assign, hard_assign_out, inlier_list)
+    names(returnList) = c("mu", "sigma", "T_mat", "tau", "c", "d", "n", "lambda", "hard_assign","hard_assign_out", "inliers")
     return(returnList)
 }
