@@ -17,7 +17,7 @@ library(dplyr)
 #         sigma_str   =       The covariance structure for each cluster - options
 #                             are unstr, diag, or const
 #         inits       =       Initial condition for EM. It contains cluster proportions,
-#                             cluster average, and covariance matrixes for clusters.
+#                             cluster average, and covariance matrixes for clusters. 
 EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
     n=nrow(sampleMat) # n is the number of observations
     ## Observations
@@ -56,8 +56,7 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
             # Robust M STEP: Update tau, mu and sigma with l0 penalty
             for (j in 1:c) {
                 e = matrix(0, n, d)
-                # Update tau
-                tau[j,] = (1/n)*sum(T_mat[j,])
+                
                 # MHdist: Square of Mahalanobis distance
                 x1 = x - rep(mu[j, ], each = n)
                 sigma_inv = solve(as.matrix(sigma[[j]]))
@@ -78,9 +77,10 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
                 num = matrix(0,d,d)
                 denom = 0
                 indices = which(e[,1]==0)
+                # Update tau
+                tau[j,] = (1/length(indices))*sum(T_mat[j,indices])
                 # Update mu
-                mu[j,] = colSums(T_mat[j,]%*%(x-e))/colSums(as.matrix(T_mat[j,]))
-                # mu[j,] = colSums(T_mat[j,indices]%*%(x[indices,]-e[indices,]))/colSums(as.matrix(T_mat[j,indices]))
+                mu[j,] = colSums(T_mat[j,indices]%*%(x[indices,]-e[indices,]))/colSums(as.matrix(T_mat[j,indices]))
                 if (length(indices) == 0) {
                     stop('lambda is too small, choose a bigger lambda to avoid no inliers case!')
                 }
@@ -89,7 +89,7 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
                     if (l == 1) {
                         x_prime = x[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T)
                     } else {
-                        x_prime = x[indices,]-e[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T) 
+                        x_prime = x[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T) 
                     }
                     num = t(x_prime)%*%diag(T_mat[j,indices], nrow=length(indices))%*%x_prime
                     sigma[[j]] = matrix(num/denom, d, d)
@@ -99,7 +99,7 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
                     if (l == 1) {
                         x_prime = x[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T)
                     } else {
-                        x_prime = x[indices,]-e[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T) 
+                        x_prime = x[indices,]-matrix(mu[j,], ncol=d, nrow=length(indices), byrow=T) 
                     }
                     num = sum(T_mat[j,indices]*x_prime^2)/d * diag(d)
                     denom = sum(T_mat[j,indices])
@@ -120,7 +120,7 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
                 }
             }
             if (any(is.na(max(abs(old_T_mat - T_mat))))) {stop('The lambda value is too small')}
-            if (max(abs(old_T_mat - T_mat)) < 1e-6) {
+            if (max(abs(old_T_mat - T_mat)) < 1e-7) {
                 break
             }
         }
@@ -135,11 +135,13 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
         x1_sigma_inv = x1 %*% sigma_inv
         MHdist = matrix(rowSums(x1_sigma_inv * x1), n, 1)
         for (i in 1:n) {
-            if (MHdist[i,] < lambda^2) {
-                inlier_list <- c(inlier_list, i) 
+            ## try out dif qchisq 099 is perferred
+            if (MHdist[i,] < lam^2) {
+                inlier_list <- c(inlier_list, i)
             }
         }
     }
+    inlier_list <- unique(inlier_list)
     # print(length(inlier_list)/n)
     # Assign the column names to the specified cluster
     Soft_assign = t(T_mat)

@@ -14,11 +14,11 @@ set.seed(num)
 
 ## parameters
 d = 2
-n = 100000
+n = 500
 c = 3
 rand_outliers = NULL
 num_sim = 50
-lam = 2.4
+lam = 2.5
 
 for (i in 1:6) {
     # Let's do 50 different sets per k
@@ -51,12 +51,14 @@ for (i in 1:6) {
         # Label the sample's clusters
         sampleMat1 = as.data.frame(cbind(sampleMat, rep(1:c, each=n)))
         colnames(sampleMat1) = c("X", "Y", "Cluster")
+        NoiseInit_by_guess = sample(c(TRUE,FALSE), size = n*c, 
+                                    replace = TRUE, prob = c(1,5)/6)
         sampleMat1$Cluster = as.character(sampleMat1$Cluster)
         init_cond <- initial_hier(sampleMat, cluster = c)
         result_rem = EM_robust(sampleMat =  sampleMat, c = c, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond)
         result_standard = EM_robust(sampleMat =  sampleMat, c = c, d=d, lambda = 1, sigma_str = 'unstr', inits = init_cond)
         result_mclust = Mclust(sampleMat, verbose=F, G=c, modelNames = "VVV",
-                               initialization = list(hcPairs = hc(sampleMat)),
+                               initialization = list(noise = NoiseInit_by_guess),
                                control = emControl(tol=c(1.e-5, 1.e-6), itmax=15))
         
         true = as.numeric(sampleMat1$Cluster) ## The true label

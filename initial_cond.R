@@ -6,15 +6,10 @@ library(dplyr)
 library(stats)
 
 ## This function is used to create the initial guess for the EM algorithm
-initial_hier = function(sampleMat, cluster, noise = NULL) {
+initial_hier = function(sampleMat, cluster) {
     ## Same as mclust might stuck in the local maximum
-    if (is.null(noise)) {
-        hclass1 = hclass(hc(sampleMat), G=cluster) 
-    }
-    else {
-        hclass1 = hclass(hc(sampleMat), G=cluster, noise = noise)  
-    }
-    
+    hclass1 = hclass(hc(sampleMat), G=cluster) 
+
     mat_withlabels <- as.data.frame(sampleMat) %>% mutate(class = hclass1)
     initial_means = mat_withlabels %>% group_by(class) %>%
         summarise_all(mean) %>% select(-class) %>% as.matrix()
