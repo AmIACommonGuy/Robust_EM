@@ -150,3 +150,14 @@ simMultGauss_cauchy = function(n, d, cluster, out_perc, out_mag, cov_scale = 1){
     return(list(mus = sampleMu, sigmas = sampleSigma, simdata = simSamp, outliers= simOut, inliers = simIn, Label = Label, LabelO = Labelo))
 }
 
+
+
+
+
+
+
+
+
+
+
+
