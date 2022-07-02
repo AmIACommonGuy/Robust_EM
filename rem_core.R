@@ -148,7 +148,7 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
     colnames(Soft_assign) = paste(1:c)
     hard_assign = matrix(paste(apply(Soft_assign, 1, which.max)), n, 1)
     hard_assign_out <- hard_assign
-    hard_assign_out[-inlier_list, 1] <- cluster+1
+    hard_assign_out[-inlier_list, 1] <- 0
     # Construct return list
     returnList = list(mu, sigma, T_mat, tau, c, d, n, lambda, hard_assign, hard_assign_out, inlier_list)
     names(returnList) = c("mu", "sigma", "T_mat", "tau", "c", "d", "n", "lambda", "hard_assign","hard_assign_out", "inliers")

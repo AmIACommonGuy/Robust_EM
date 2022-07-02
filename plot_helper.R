@@ -83,7 +83,7 @@ plot_rem = function(sim_EMfit, sampleMat){
     d = sim_EMfit$d
     n = sim_EMfit$n
     lambda = sim_EMfit$lambda
-    inliers <- which(sim_EMfit$hard_assign_out != (c+1))
+    inliers <- which(sim_EMfit$hard_assign_out != 0)
     
     # Think about assigning the points to the clusters
     Soft_assign = t(T_mat)

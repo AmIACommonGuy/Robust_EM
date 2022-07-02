@@ -56,6 +56,10 @@ p_mc <- plot_mc(result_mclust)
 rand.index(sim_info$label, result_mclust$classification)
 adjustedRandIndex(sim_info$label, result_mclust$classification)
 classError(sim_info$label, result_mclust$classification)
+
+
+classError(1*(sim_info$label == 0), 1*(result_mclust$classification == 0))
+sum(result_mclust$classification == 0)/(n*cluster)
 ```
 
 ## Init with Mclust result
@@ -74,17 +78,23 @@ adjustedRandIndex(sim_info$label, as.numeric(result_robust$hard_assign_out))
 classError(sim_info$label, as.numeric(result_robust$hard_assign_out))
 plot_rem(result_robust, sim_info$x)
 p_rem <- plot_rem(result_robust, sim_info$x)
+
+classError(1*(sim_info$label == 0), 1*(result_robust$hard_assign_out == 0))
+sum(result_robust$hard_assign_out == 0)/(n*cluster)
 ```
 
 ## Init with hierachical
 ```{r}
 init_cond_hc <- initial_hier(sim_info$x, cluster = cluster)
-result_robust <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond_hc)
-rand.index(sim_info$label, as.numeric(result_robust$hard_assign_out))
-adjustedRandIndex(sim_info$label, as.numeric(result_robust$hard_assign_out))
-plot_rem(result_robust, sim_info$x)
-prem_hc <- plot_rem(result_robust, sim_info$x)
-classError(sim_info$label, as.numeric(result_robust$hard_assign_out))
+result_robust_hc <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond_hc)
+rand.index(sim_info$label, as.numeric(result_robust_hc$hard_assign_out))
+adjustedRandIndex(sim_info$label, as.numeric(result_robust_hc$hard_assign_out))
+plot_rem(result_robust_hc, sim_info$x)
+prem_hc <- plot_rem(result_robust_hc, sim_info$x)
+classError(sim_info$label, as.numeric(result_robust_hc$hard_assign_out))
+
+classError(1*(sim_info$label == 0), 1*(result_robust_hc$hard_assign_out == 0))
+sum(result_robust_hc$hard_assign_out == 0)/(n*cluster)
 ```
 
 ```{r}
@@ -116,9 +126,9 @@ for (i in c(1:150)) {
     result_robust <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond_hc)
     rdx_list_rb_hc = c(rdx_list_rb_hc, rand.index(sim_info$label, as.numeric(result_robust$hard_assign_out)))
     ardx_list_rb_hc = c(ardx_list_rb_hc, adjustedRandIndex(sim_info$label, as.numeric(result_robust$hard_assign_out)))
-    result_robust <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond)
-    rdx_list_rb = c(rdx_list_rb, rand.index(sim_info$label, as.numeric(result_robust$hard_assign_out)))
-    ardx_list_rb = c(ardx_list_rb, adjustedRandIndex(sim_info$label, as.numeric(result_robust$hard_assign_out)))
+    result_robust_hc <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond)
+    rdx_list_rb = c(rdx_list_rb, rand.index(sim_info$label, as.numeric(result_robust_hc$hard_assign_out)))
+    ardx_list_rb = c(ardx_list_rb, adjustedRandIndex(sim_info$label, as.numeric(result_robust_hc$hard_assign_out)))
 }
 
 ```
