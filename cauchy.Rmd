@@ -39,7 +39,7 @@ lam = 2.7
 ```
 
 ```{r}
-sim_info <- sim_cauchy(cluster, d, seperation, n, out_perc, cov_scale = cov_scale, df = 5)
+sim_info <- sim_mixture(cluster, d, seperation, n, out_perc, cov_scale = cov_scale, df = 5)
 ggplot() + geom_point(aes(x = sim_info$gauss[,1], y = sim_info$gauss[,2]), col = sim_info$label_in) + geom_point(aes(x = sim_info$outlier[,1], y = sim_info$outlie[,2]), shape = 4)
 orip <- ggplot() + geom_point(aes(x = sim_info$gauss[,1], y = sim_info$gauss[,2]), col = sim_info$label_in) + geom_point(aes(x = sim_info$outlier[,1], y = sim_info$outlie[,2]), shape = 4)
 ```
@@ -64,7 +64,7 @@ sum(result_mclust$classification == 0)/(n*cluster)
 
 ## Init with Mclust result
 ```{r}
-init_cond <- initMCLUST(sim_info, cluster)
+init_cond <- initial_hier(sim_info, cluster, mode = 'denoise')
 ```
 
 
