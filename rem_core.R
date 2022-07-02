@@ -141,14 +141,14 @@ EM_robust = function(sampleMat, c, lambda = Inf, d, sigma_str, inits) {
             }
         }
     }
+    
     inlier_list <- unique(inlier_list)
-    # print(length(inlier_list)/n)
     # Assign the column names to the specified cluster
     Soft_assign = t(T_mat)
     colnames(Soft_assign) = paste(1:c)
     hard_assign = matrix(paste(apply(Soft_assign, 1, which.max)), n, 1)
     hard_assign_out <- hard_assign
-    hard_assign_out[-inlier_list,1] <- cluster+1
+    hard_assign_out[-inlier_list, 1] <- cluster+1
     # Construct return list
     returnList = list(mu, sigma, T_mat, tau, c, d, n, lambda, hard_assign, hard_assign_out, inlier_list)
     names(returnList) = c("mu", "sigma", "T_mat", "tau", "c", "d", "n", "lambda", "hard_assign","hard_assign_out", "inliers")
