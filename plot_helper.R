@@ -30,6 +30,7 @@ plot_mc <- function(x) {
 }
 
 
+
 plot_rem_outlier = function(sim_EMfit, sampleMat){
     
     swap <- function(vec, from, to) {
