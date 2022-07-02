@@ -17,3 +17,11 @@ initial_hier = function(sampleMat, cluster) {
     initial_tau = sapply(1:cluster, function(x) {sum(hclass1 == x) / length(hclass1)})
     return(list(initial_means, initial_cov, initial_tau))
 }
+
+
+
+
+
+
+
+

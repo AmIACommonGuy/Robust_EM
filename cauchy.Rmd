@@ -1,0 +1,148 @@
+---
+title: "EM_t_dist"
+author: "ziming"
+date: "6/27/2022"
+output: html_document
+---
+
+
+```{r}
+library(MASS)
+library(stats)
+library(mvtnorm)
+library(LaplacesDemon)
+library(ggplot2)
+library(ggpubr)
+library(Matrix)
+library(mixtools)
+library(dplyr)
+library(stats)
+library(fossil)
+library(mclust)
+
+source('C:/Users/njzmh/OneDrive/Desktop/REM_official/plot_helper.R')
+source('C:/Users/njzmh/OneDrive/Desktop/REM_official/rem_core.R')
+source('C:/Users/njzmh/OneDrive/Desktop/REM_official/initial_cond.R')
+source('C:/Users/njzmh/OneDrive/Desktop/REM_official/simulator.R')
+source('C:/Users/njzmh/OneDrive/Desktop/REM_official/init_mclust.R')
+source('C:/Users/njzmh/OneDrive/Desktop/REM_official/simulations/test_cauchy2.R')
+```
+
+```{r}
+cluster = 7
+d = 2
+seperation = 26
+n = 50
+out_perc <- 0.15
+cov_scale <- 1
+lam = 2.7
+```
+
+```{r}
+sim_info <- sim_cauchy(cluster, d, seperation, n, out_perc, cov_scale = cov_scale, df = 5)
+ggplot() + geom_point(aes(x = sim_info$gauss[,1], y = sim_info$gauss[,2]), col = sim_info$label_in) + geom_point(aes(x = sim_info$outlier[,1], y = sim_info$outlie[,2]), shape = 4)
+orip <- ggplot() + geom_point(aes(x = sim_info$gauss[,1], y = sim_info$gauss[,2]), col = sim_info$label_in) + geom_point(aes(x = sim_info$outlier[,1], y = sim_info$outlie[,2]), shape = 4)
+```
+
+## MCLUST
+```{r}
+NoiseInit_by_guess = sample(c(TRUE,FALSE), size = dim(sim_info$x)[1], 
+                            replace = TRUE, prob = c(1,5)/6)
+result_mclust = Mclust(sim_info$x, verbose=F, G=cluster, modelNames = "VVV",
+                       initialization = list(noise = NoiseInit_by_guess),
+                       control = emControl(tol=c(1.e-6, 1.e-7), itmax=15))
+plot_mc(result_mclust)
+p_mc <- plot_mc(result_mclust)
+rand.index(sim_info$label, result_mclust$classification)
+adjustedRandIndex(sim_info$label, result_mclust$classification)
+classError(sim_info$label, result_mclust$classification)
+```
+
+## Init with Mclust result
+```{r}
+init_cond <- initMCLUST(sim_info, cluster)
+```
+
+
+## RobustEM
+```{r}
+## Standard EM
+## Robust EM
+result_robust <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond)
+rand.index(sim_info$label, as.numeric(result_robust$hard_assign_out))
+adjustedRandIndex(sim_info$label, as.numeric(result_robust$hard_assign_out))
+classError(sim_info$label, as.numeric(result_robust$hard_assign_out))
+plot_rem(result_robust, sim_info$x)
+p_rem <- plot_rem(result_robust, sim_info$x)
+```
+
+## Init with hierachical
+```{r}
+init_cond_hc <- initial_hier(sim_info$x, cluster = cluster)
+result_robust <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond_hc)
+rand.index(sim_info$label, as.numeric(result_robust$hard_assign_out))
+adjustedRandIndex(sim_info$label, as.numeric(result_robust$hard_assign_out))
+plot_rem(result_robust, sim_info$x)
+prem_hc <- plot_rem(result_robust, sim_info$x)
+classError(sim_info$label, as.numeric(result_robust$hard_assign_out))
+```
+
+```{r}
+ggarrange(p_mc, p_rem,prem_hc, orip,
+          labels = c('mclust', 'robust', 'robust_hc', 'original'),
+          ncol = 4, nrow = 1)
+```
+
+
+
+
+```{r}
+rdx_list_rb_hc <- c()
+ardx_list_rb_hc <- c()
+rdx_list_mc <- c()
+ardx_list_mc <- c()
+rdx_list_rb <- c()
+ardx_list_rb <- c()
+for (i in c(1:150)) {
+    sim_info <- sim_cauchy(cluster, d, seperation, n, out_perc, cov_scale = cov_scale, df = 5)
+    ## 2 dif cond
+    init_cond_hc <- initial_hier(sim_info$x, cluster = cluster)
+    init_cond <- initMCLUST(sim_info, cluster)
+    result_mclust = Mclust(sim_info$x, verbose=F, G=cluster, modelNames = "VVV",
+                           initialization = list(noise = NoiseInit_by_guess),
+                           control = emControl(tol=c(1.e-6, 1.e-7), itmax=15))
+    rdx_list_mc = c(rdx_list_mc, rand.index(sim_info$label, result_mclust$classification))
+    ardx_list_mc = c(ardx_list_mc, adjustedRandIndex(sim_info$label, result_mclust$classification))
+    result_robust <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond_hc)
+    rdx_list_rb_hc = c(rdx_list_rb_hc, rand.index(sim_info$label, as.numeric(result_robust$hard_assign_out)))
+    ardx_list_rb_hc = c(ardx_list_rb_hc, adjustedRandIndex(sim_info$label, as.numeric(result_robust$hard_assign_out)))
+    result_robust <- EM_robust(sampleMat =  sim_info$x, c = cluster, d=d, lambda = lam, sigma_str = 'unstr', inits = init_cond)
+    rdx_list_rb = c(rdx_list_rb, rand.index(sim_info$label, as.numeric(result_robust$hard_assign_out)))
+    ardx_list_rb = c(ardx_list_rb, adjustedRandIndex(sim_info$label, as.numeric(result_robust$hard_assign_out)))
+}
+
+```
+
+```{r}
+boxplot(rdx_list_rb_hc, rdx_list_rb, rdx_list_mc,names=c("rem_hc","rem","mclust"))
+boxplot(ardx_list_rb_hc, ardx_list_rb, ardx_list_mc, names=c("rem_hc","rem","mclust"))
+```
+```{r}
+print(paste('mc:',as.character(mean(rdx_list_mc)), 'sd:', as.character(sd(rdx_list_mc))))
+print(paste('rem:',as.character(mean(rdx_list_rb)), 'sd:', as.character(sd(rdx_list_rb))))
+print(paste('hc:',as.character(mean(rdx_list_rb_hc)), 'sd:', as.character(sd(rdx_list_rb_hc))))
+```
+```{r}
+print(paste('mc:',as.character(mean(ardx_list_mc)), 'sd:', as.character(sd(ardx_list_mc))))
+print(paste('rem:',as.character(mean(ardx_list_rb)), 'sd:', as.character(sd(ardx_list_rb))))
+print(paste('hc:',as.character(mean(ardx_list_rb_hc)), 'sd:', as.character(sd(ardx_list_rb_hc))))
+```
+
+
+
+
+
+
+
+
+
