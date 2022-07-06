@@ -1,5 +1,6 @@
 library(MASS)
 
+## plot for mclust result
 plot_mc <- function(x) {
     mu = as.data.frame(t(x$parameters$mean))
     sigma = x$parameters$variance$sigma
@@ -29,6 +30,7 @@ plot_mc <- function(x) {
         covar_EM_plots
 }
 
+##plot for robustEM result
 plot_rem = function(sim_EMfit, sampleMat){
     
     swap <- function(vec, from, to) {

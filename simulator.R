@@ -3,8 +3,16 @@ library(stats)
 library(mvtnorm)
 library(LaplacesDemon)
 
+## cluster: number of cluster
+## d: dimension
+## separation: minimum distance between centers of clusters
+## n: number of points in each cluster
+## out_perc: percentage of outliers in the dataset
+## cov_scale: scaling coefficient for covariance
+## df: degree of freedom, Inf when normal
+## outl_mode: 'cauchy' or 'uniform'
 
-sim_mixture <- function(cluster, d, seperation, n, out_perc, out_mag = 1, cov_scale = 1, df = Inf, outl_mode = 'cauchy') {
+sim_mixture <- function(cluster, d, separation, n, out_perc, cov_scale = 1, df = Inf, outl_mode = 'cauchy') {
     ## Number of outliers determined here
     n_inlier <- round(n*(1-out_perc))
     n_outlier <- n - n_inlier
@@ -14,7 +22,7 @@ sim_mixture <- function(cluster, d, seperation, n, out_perc, out_mag = 1, cov_sc
     while (count < cluster) {
         new_mu <- runif(d, 0, 100)
         temp <- rbind(mu, new_mu)
-        if (min(dist(temp)) < seperation) {
+        if (min(dist(temp)) < separation) {
             next
         }
         mu <- temp
@@ -23,7 +31,7 @@ sim_mixture <- function(cluster, d, seperation, n, out_perc, out_mag = 1, cov_sc
     ## Simulate sigma
     sigma <- c()
     for(i in c(1:cluster)) {
-        sigma[[i]] = diag(runif(d, 4, 25))*cov_scale
+        sigma[[i]] = diag(runif(d, 4, 25)) * cov_scale
     }
     gauss <- c()
     label <- rep(c(1:cluster),each = n_inlier)
@@ -39,8 +47,8 @@ sim_mixture <- function(cluster, d, seperation, n, out_perc, out_mag = 1, cov_sc
             while(count!=n_outlier) {
                 ## Draw outliers from multivariate Cauchy
                 out_coef <- rmvc(1, mu[i,], sigma[[i]])
-                mhd <- mahalanobis(out_coef, mu[i,], sigma[[i]]) * out_mag
-                if (mhd > (5-out_mag) & mhd < (45+out_mag)) {
+                mhd <- mahalanobis(out_coef, mu[i,], sigma[[i]])
+                if (mhd > 10 & mhd < 45) {
                     outliers <- rbind(outliers,out_coef)
                     count = count + 1
                 } 
@@ -49,12 +57,9 @@ sim_mixture <- function(cluster, d, seperation, n, out_perc, out_mag = 1, cov_sc
             while(count!=n_outlier) {
                 ## Draw outliers from multivariate Cauchy
                 out_coef <- runif(d,-3.5,3.5)
-                out_coef <- out_coef + sign(out_coef)* diag(sigma[[i]]) * 2
-                mhd <- mahalanobis(out_coef, mu[i,], sigma[[i]]) * out_mag
-                if (mhd > (5-out_mag) & mhd < (45+out_mag)) {
-                    outliers <- rbind(outliers,out_coef)
-                    count = count + 1
-                } 
+                out_coef <- out_coef + sign(out_coef)* diag(sigma[[i]]) + mu[i,]
+                outliers <- rbind(outliers,out_coef)
+                count = count + 1
             } 
             
         } else {

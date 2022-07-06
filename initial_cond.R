@@ -5,7 +5,6 @@ library(mixtools)
 library(dplyr)
 library(stats)
 
-## This function is used to create the initial guess for the EM algorithm
 initial_hier = function(sampleMat, cluster, mode = 'hc') {
     if (mode == 'hc') {
         hclass1 = hclass(hc(sampleMat), G=cluster) 
